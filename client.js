@@ -24,7 +24,7 @@ conn.on('data', data => {
       if (err) {
         throw err;
       } else {
-        console.log('The file has been saved');
+        console.log('A chunk of data has been recieved');
       }
       // and then end the connection
       conn.destroy();

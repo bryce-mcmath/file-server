@@ -1,33 +1,35 @@
 const net = require('net');
 const fs = require('fs');
 const filename = process.argv[2];
+// Create destination for transferred file to be written to
+const writeStream = fs.createWriteStream(`./recieved/${filename}`);
 
 const conn = net.createConnection({
-  host: '127.0.0.1',
-  port: 5050
+  host: '127.0.0.1', // localhost default. Change this to request files from another IP
+  port: 5050 // Make sure this matches server port
 });
 
-// Send the inputted filename to the server
-conn.write(filename);
+// After connecting
+conn.on('connect', () => {
+  // Send the requested filename
+  conn.write(filename);
+});
 
 // When data is received from the server
 conn.on('data', data => {
-  // Check if it's an error
-  if (data.toString() === 'Error: that file does not exist') {
-    // If it is, log it to the console
-    console.log(data.toString());
-    // And then end the connection
-    conn.destroy();
-  } else {
-    // Otherwise write the recieved file into our receieved directory
-    fs.writeFile(`./recieved/${filename}`, data, err => {
-      if (err) {
-        throw err;
-      } else {
-        console.log('A chunk of data has been recieved');
-      }
-      // and then end the connection
-      conn.destroy();
-    });
-  }
+  // Write a chunk at a time
+  console.log('Writing data chunk to file...');
+  writeStream.write(data);
+});
+
+// When finished, notify and end connection
+conn.on('end', () => {
+  console.log('File transfer complete. Exiting.');
+  conn.destroy();
+});
+
+// If error, notify and end connection
+conn.on('error', () => {
+  console.log('Error retrieving file. Exiting.');
+  conn.destroy();
 });
